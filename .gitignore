@@ -1,0 +1,8 @@
+node_modules/
+dist/
+data/
+.yajm/
+.jfmigrate/
+*.log
+.DS_Store
+sample/*.db
