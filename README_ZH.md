@@ -8,29 +8,49 @@
 
 [English](README.md)
 
-<img width="1772" height="1178" alt="clipboard_2026-07-12_11-57" src="https://github.com/user-attachments/assets/c4fcab9a-f6ab-46cf-b845-2fc5d9d9e382" />
+![](https://github.com/user-attachments/assets/c4fcab9a-f6ab-46cf-b845-2fc5d9d9e382)
 
-这是一个使用 Node.js 和 TypeScript 编写的命令行工具，用于迁移 Jellyfin 用户、用户设置、显示偏好、电影和剧集观看数据。
+这是一个使用 Node.js 和 TypeScript 编写的命令行工具，用于迁移 Jellyfin 用户、用户设置、用户观看记录、电影和剧集元数据。
 
 ## 项目适用范围
 
-YAJM 是一个面向 Jellyfin **逻辑迁移与媒体库重建**的工具，适用于以下工况（满足任意一项即可）：
+YAJM 是一个面向 Jellyfin **逻辑迁移与媒体库重建**的工具，适用于以下工况：
 
 - 跨 Jellyfin 版本迁移；
 - 跨 CPU 架构迁移；
 - 丢弃原数据库，但保留全部媒体文件并重建 Jellyfin 服务器；
-- 部分媒体文件的上层目录发生变化，但媒体文件本身完全不变。
+- 部分媒体文件的上层目录发生变化重整，但媒体文件本身完全不变。
 
-如果迁移不涉及上述情况，请优先使用 Jellyfin 官方的 **Built-in Backup**。YAJM 不是官方完整备份功能的替代品；它解决的是数据库和内部路径无法原样复用时，如何通过 Jellyfin API、逻辑媒体匹配和可移植快照恢复用户、设置、观看数据、媒体元数据及图片。
+如果迁移不涉及上述情况，请优先使用 Jellyfin 官方的 **[内置备份功能](https://jellyfin.org/docs/general/administration/backup-and-restore/)**。YAJM 不是官方完整备份功能的替代品；它解决的是数据库和内部路径无法原样复用时，如何通过 Jellyfin API、逻辑媒体匹配和可移植快照恢复用户、设置、观看数据、媒体元数据及图片。
 
-### 媒体类型限制
+## 特性
+
+### 逻辑导出
+
+为应对跨版本、跨架构、重构服务器底层数据库，本项目将 Jellyfin 服务器的相关数据抽取为 JSONL ，并在导入时解析为 API 请求写入目标数据库。
+
+### 数据库解析
+
+本项目可以直接解析 Jellyfin 服务器数据目录下的 sqlite 数据库文件生成 JSONL 以提升导出性能。
+
+### 内部 GUID 映射
+
+为了解决迁移 Jellyfin 服务器时媒体路径变化导致影视文件被重新生成 GUID 、已刮削数据和观看记录不匹配的问题，本项目通过一个基于置信度的可靠匹配算法创建新旧服务器的媒体文件 GUID 映射，并自动将映射后的数据迁入目标服务器。
+
+### 图像同步
+
+> 注：图像迁移范围只包含 Movie, Series, Season, Episode，不会导出演员、工作室等对象的图像
+
+Jellyfin 的 NFO Saver 在文件中写入的图像信息是绝对路径，导致在目录有变化的迁移过程中可能会丢弃已保存的图像，转而使用 TMDB 等内置刮削源获取的默认图片。YAJM 在内部 GUID 映射能力的基础上，实现了元数据图像文件的迁移，并且在并发加持下，下载速度非常快。
+
+## 媒体库限制
 
 YAJM 目前只支持：
 
 - 电影（Movie）；
 - 电视剧，包括 Series、Season 和 Episode。
 
-YAJM **不支持**音乐、电子书、图库，以及这些媒体类型对应的元数据、用户数据和图片迁移。
+YAJM **不支持**音乐、电子书、图库，以及这些媒体类型对应的元数据、用户数据和图片迁移。如果有这类媒体库的迁移需求，欢迎贡献PR。
 
 ## 命令
 
@@ -59,18 +79,6 @@ pnpm yajm import
 - 使用管理员 API Key 访问在线 Jellyfin 服务器；
 - 使用静态 `jellyfin.db` SQLite 文件作为回退来源。
 
-## 逻辑媒体库备份
-
-每次导出还会把电影和电视剧媒体库的逻辑备份写入 `library.jsonl`。当新 Jellyfin 服务器在不同的上层路径下重新扫描相同媒体文件并生成新的 item GUID 时，这份逻辑备份用于重建映射。导入会生成 `oldItemId -> newItemId` 映射，写入 `reports/item-map.json` 和 `reports/library-diff.json`，并在通过 Jellyfin 的 `POST /Items/{itemId}` API 写回元数据前询问用户。
-
-### 图片
-
-当逻辑媒体库来源为在线 API 时，导出还可以归档 Movie、Series、Season 和 Episode 当前使用的图片。原始图片通过 Jellyfin API 下载到 `images/` 目录并去重和索引；整个过程不需要直接访问媒体物理位置，也不需要解析 Docker 路径映射。导入可以通过 Jellyfin 图片 API 替换匹配条目的对应图片类型。同一条目的多张图片会按顺序恢复，以保留 Backdrop 顺序；不同条目则使用配置的写入并发处理。
-
-### 媒体匹配
-
-逻辑媒体匹配把 Movie 和 Episode 的文件名作为权威依据，并结合上层目录、Provider ID、季/集编号以及推导出的 Series/Season 关系提高匹配置信度。用户设置和观看历史使用同一份 GUID 映射，因此其中引用的旧媒体库 item ID 也可以在 API 写入前转换为新 ID。
-
 ## 导入
 
 `import` 会启动交互式向导并执行以下操作：
@@ -95,4 +103,4 @@ pnpm test
 node dist/cli.js --help
 ```
 
-SQLite 回退功能要求系统安装支持 `-json` 参数的 `sqlite3` 命令行工具。
+SQLite 功能要求系统安装支持 `-json` 参数的 `sqlite3` 命令行工具。
