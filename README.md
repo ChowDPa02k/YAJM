@@ -94,6 +94,10 @@ Each stage can read from either:
 
 Local state is written under `data/`, including plaintext API keys in `data/config.json` and snapshots in `data/exports/<name>/`.
 
+## Performance Observations
+
+For both export and import, YAJM is generally bottlenecked by Jellyfin API request latency. Exporting all data through the API takes more than 40 minutes on an Intel(R) Pentium(R) Silver N6005 server with a PCIe 3.0 SSD and approximately 40 users, 2,800 movies, 500 TV shows, 14,000 episodes, and over 33,000 watch-history records. In contrast, parsing watch history directly from an offline `jellyfin.db` takes only a few seconds.
+
 ## Development
 
 ```bash

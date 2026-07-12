@@ -94,6 +94,10 @@ pnpm yajm import
 
 本地状态写入 `data/`，其中包括保存明文 API Key 的 `data/config.json`，以及位于 `data/exports/<name>/` 的快照。
 
+## 性能观测
+
+无论是导出还是导入，YAJM 的瓶颈基本都在 Jellyfin 的 API 请求延迟上，如果走 API 导出所有数据，在一台含约 40 用户、2800 电影、500 电视剧、14000 集和 33000+ 观看历史记录的 Intel(R) Pentium(R) Silver N6005 + PCIe 3.0 SSD 服务器需要花费 40 分钟以上的时间，但通过 jellyfin.db 冷数据解析观看记录仅需要几秒。
+
 ## 开发
 
 ```bash
