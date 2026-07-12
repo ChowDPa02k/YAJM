@@ -1,5 +1,27 @@
 # Yet Another Jellyfin Migrator
 
+## 项目适用范围
+
+YAJM 是一个面向 Jellyfin **逻辑迁移与媒体库重建**的工具，适用于以下工况（满足任意一项即可）：
+
+- 跨 Jellyfin 版本迁移；
+- 跨 CPU 架构迁移；
+- 丢弃原数据库，但保留全部媒体文件并重建 Jellyfin 服务器；
+- 部分媒体文件的上层目录发生变化，但媒体文件本身完全不变。
+
+如果迁移不涉及上述情况，请优先使用 Jellyfin 官方的 **Built-in Backup**。YAJM
+不是官方完整备份功能的替代品；它解决的是数据库和内部路径无法原样复用时，如何通过
+Jellyfin API、逻辑媒体匹配和可移植快照恢复用户、设置、观看数据、媒体元数据及图片。
+
+### 媒体类型限制
+
+YAJM 目前只支持：
+
+- 电影（Movie）；
+- 电视剧，包括 Series、Season 和 Episode。
+
+YAJM **不支持**音乐、电子书、图库，以及这些媒体类型对应的元数据、用户数据和图片迁移。
+
 Node/TypeScript CLI for migrating Jellyfin users, user settings, display preferences, and Movie/Episode watch data.
 
 The CLI intentionally exposes only two commands:
