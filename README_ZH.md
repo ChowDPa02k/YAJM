@@ -1,5 +1,11 @@
 # Yet Another Jellyfin Migrator
 
+> **⚠ 须知**
+>
+> 本项目 100% 由 Codex + GPT-5.5 / GPT-5.6 Sol 完成
+>
+> 作者本人完全不懂 Node.js 代码，使用此服务/软件产生的风险由用户自行承担
+
 [English](README.md)
 
 <img width="1772" height="1178" alt="clipboard_2026-07-12_11-57" src="https://github.com/user-attachments/assets/c4fcab9a-f6ab-46cf-b845-2fc5d9d9e382" />
