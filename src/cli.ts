@@ -10,6 +10,7 @@ import { listSnapshots, readConfig, resolveSnapshotPath, snapshotPath, writeConf
 import { readSnapshot } from "./snapshot.js";
 import type { AppConfig, JellyfinUserDto, UserRecord } from "./types.js";
 import { parseUserDecisionKey } from "./user-decision.js";
+import { printLogo } from "./logo.js";
 
 const program = new Command();
 
@@ -39,6 +40,7 @@ program.parseAsync().catch((error: unknown) => {
 });
 
 async function runExport(): Promise<void> {
+  printLogo();
   p.intro("YAJM export");
   const config = await readConfig();
   const exportScope = await promptValue<string>(
@@ -149,6 +151,7 @@ async function runExport(): Promise<void> {
 }
 
 async function runImport(dryRun: boolean): Promise<void> {
+  printLogo();
   p.intro(dryRun ? "YAJM import (dry-run)" : "YAJM import");
   const config = await readConfig();
   const snapshots = await listSnapshots();
