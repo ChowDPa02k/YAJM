@@ -2,6 +2,10 @@
 
 [English](README.md)
 
+<img width="1772" height="1178" alt="clipboard_2026-07-12_11-57" src="https://github.com/user-attachments/assets/c4fcab9a-f6ab-46cf-b845-2fc5d9d9e382" />
+
+这是一个使用 Node.js 和 TypeScript 编写的命令行工具，用于迁移 Jellyfin 用户、用户设置、显示偏好、电影和剧集观看数据。
+
 ## 项目适用范围
 
 YAJM 是一个面向 Jellyfin **逻辑迁移与媒体库重建**的工具，适用于以下工况（满足任意一项即可）：
@@ -21,10 +25,6 @@ YAJM 目前只支持：
 - 电视剧，包括 Series、Season 和 Episode。
 
 YAJM **不支持**音乐、电子书、图库，以及这些媒体类型对应的元数据、用户数据和图片迁移。
-
-## 项目概览
-
-这是一个使用 Node.js 和 TypeScript 编写的命令行工具，用于迁移 Jellyfin 用户、用户设置、显示偏好、电影和剧集观看数据。
 
 ## 命令
 
@@ -59,7 +59,7 @@ pnpm yajm import
 
 ### 图片
 
-当逻辑媒体库来源为在线 API 时，导出还可以归档 Movie、Series、Season 和 Episode 当前使用的图片。原始图片通过 Jellyfin 下载，在 `images/` 下按 SHA-256 去重，并由 `images.jsonl` 建立索引；整个过程不需要直接访问媒体目录，也不需要解析 Docker 路径映射。导入可以通过 Jellyfin 图片 API 替换匹配条目的对应图片类型。同一条目的多张图片会按顺序恢复，以保留 Backdrop 顺序；不同条目则使用配置的写入并发处理。
+当逻辑媒体库来源为在线 API 时，导出还可以归档 Movie、Series、Season 和 Episode 当前使用的图片。原始图片通过 Jellyfin API 下载到 `images/` 目录并去重和索引；整个过程不需要直接访问媒体物理位置，也不需要解析 Docker 路径映射。导入可以通过 Jellyfin 图片 API 替换匹配条目的对应图片类型。同一条目的多张图片会按顺序恢复，以保留 Backdrop 顺序；不同条目则使用配置的写入并发处理。
 
 ### 媒体匹配
 
@@ -78,7 +78,7 @@ pnpm yajm import
 
 ## 本地数据
 
-本地状态写入 `data/`，其中包括保存明文 API Key 的 `data/config.json`，以及位于 `data/exports/<name>/` 的快照。导入仍兼容旧版隐藏快照目录 `.yajm/exports/<name>/`，也兼容早期实验版本的 `.jfmigrate/exports/<name>/`。
+本地状态写入 `data/`，其中包括保存明文 API Key 的 `data/config.json`，以及位于 `data/exports/<name>/` 的快照。
 
 ## 开发
 
