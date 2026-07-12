@@ -22,7 +22,11 @@ YAJM currently supports:
 
 YAJM **does not support** music, ebooks, photo libraries, or the metadata, user data, and artwork associated with those media types.
 
+## Overview
+
 Node/TypeScript CLI for migrating Jellyfin users, user settings, display preferences, and Movie/Episode watch data.
+
+## Commands
 
 The CLI intentionally exposes only two commands:
 
@@ -31,6 +35,8 @@ pnpm yajm export
 pnpm yajm import --dry-run
 pnpm yajm import
 ```
+
+## Export
 
 `export` starts an interactive wizard. It first asks whether to export:
 
@@ -47,12 +53,16 @@ Each stage can read from either:
 - a live Jellyfin server through an administrator API key
 - a static `jellyfin.db` SQLite file as a fallback
 
+## Logical Library Backup
+
 Every export also captures a logical Movies+TV library backup into `library.jsonl`.
 This is used when a new Jellyfin server rescans the same media files under
 different parent paths and therefore assigns new item GUIDs. Import builds an
 `oldItemId -> newItemId` map, writes `reports/item-map.json` and
 `reports/library-diff.json`, then asks before writing metadata back with
 Jellyfin's `POST /Items/{itemId}` API.
+
+### Artwork
 
 When the logical library source is the live API, export can also archive the
 server's current Movie/Series/Season/Episode artwork. Original image bytes are
@@ -63,11 +73,15 @@ image API. Images belonging to one item are restored sequentially so multiple
 backdrops retain their source order, while different items are processed with
 the configured write concurrency.
 
+### Media Matching
+
 Logical library matching treats Movie/Episode filenames as authoritative and
 uses parent folders, provider IDs, season/episode numbers, and derived
 Series/Season relationships to raise confidence. User settings and watch history
 restore use the same GUID map, so references to old library item IDs can be
 rewritten before API writes.
+
+## Import
 
 `import` starts an interactive wizard that:
 
@@ -77,6 +91,8 @@ rewritten before API writes.
 - restores user settings and display preferences
 - optionally restores archived artwork after logical media matching
 - restores Movie/Episode watch data through Jellyfin APIs
+
+## Local Data
 
 Local state is written under `data/`, including plaintext API keys in `data/config.json` and snapshots in `data/exports/<name>/`.
 Legacy hidden snapshots under `.yajm/exports/<name>/` are still readable for import, and earlier experimental `.jfmigrate/exports/<name>/` snapshots are also still accepted.
