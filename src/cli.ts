@@ -232,15 +232,34 @@ async function runImport(dryRun: boolean): Promise<void> {
   const targetUsers = await client.getUsers();
   spinner.stop(`Target has ${targetUsers.length} users`);
 
+  const importSpinner = p.spinner();
+  let importSpinnerActive = false;
+  const onImportProgress = (message: string): void => {
+    if (!importSpinnerActive) {
+      if (message.includes("import users:")) return;
+      importSpinner.start(message);
+      importSpinnerActive = true;
+      return;
+    }
+    importSpinner.message(message);
+  };
+
   const decisions = new Map<string, ImportDecision>();
   const decideUser = async (user: UserRecord, latestTargetUsers: JellyfinUserDto[]): Promise<ImportDecision> => {
     const existing = decisions.get(user.id);
     if (existing) return existing;
-    const choiceKey = await promptValue<string>(
-      p.text({
+    if (importSpinnerActive) {
+      importSpinner.stop("Ready for user decisions");
+      importSpinnerActive = false;
+    }
+    const choiceKey = await promptValue<"c" | "m" | "s">(
+      p.selectKey({
         message: `No same-name target user for "${user.name}". [C] Create / [M] Merge / [S] Skip`,
-        placeholder: "C / M / S",
-        validate: (value) => (parseUserDecisionKey(value) ? undefined : "Enter C, M, or S")
+        options: [
+          { value: "c", label: "Create" },
+          { value: "m", label: "Merge" },
+          { value: "s", label: "Skip" }
+        ]
       })
     );
     const choice = parseUserDecisionKey(choiceKey)!;
@@ -266,8 +285,8 @@ async function runImport(dryRun: boolean): Promise<void> {
     return decision;
   };
 
-  const importSpinner = p.spinner();
   importSpinner.start(dryRun ? "Running dry-run import..." : "Importing snapshot...");
+  importSpinnerActive = true;
   try {
     const result = await importSnapshot({
       snapshotName,
@@ -280,11 +299,14 @@ async function runImport(dryRun: boolean): Promise<void> {
       readConcurrency,
       writeConcurrency,
       decideUser,
-      onProgress: (message) => importSpinner.message(message)
+      onProgress: onImportProgress
     });
     const reportsPath = await resolveSnapshotPath(snapshotName, "reports");
     const libraryDiffPath = await resolveSnapshotPath(snapshotName, "reports", "library-diff.json");
-    importSpinner.stop(dryRun ? "Dry-run complete" : "Import complete");
+    if (importSpinnerActive) {
+      importSpinner.stop(dryRun ? "Dry-run complete" : "Import complete");
+      importSpinnerActive = false;
+    }
     p.note(
       [
         `Users mapped/created/skipped: ${result.mappings.filter((item) => item.action !== "skip").length}/${result.mappings.filter((item) => item.action === "skip").length}`,
@@ -301,7 +323,7 @@ async function runImport(dryRun: boolean): Promise<void> {
     );
     p.outro(dryRun ? "Dry-run finished" : "Import finished");
   } catch (error) {
-    importSpinner.stop("Import failed");
+    if (importSpinnerActive) importSpinner.stop("Import failed", 2);
     throw error;
   }
 }
